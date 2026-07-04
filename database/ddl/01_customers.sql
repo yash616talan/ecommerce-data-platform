@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS ecommerce.customers
+(
+    customer_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+    first_name VARCHAR(100) NOT NULL,
+
+    last_name VARCHAR(100) NOT NULL,
+
+    email VARCHAR(254) NOT NULL UNIQUE,
+
+    phone VARCHAR(20) UNIQUE,
+
+    dob DATE,
+
+    gender VARCHAR(20),
+
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
