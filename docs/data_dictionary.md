@@ -1012,3 +1012,191 @@ Future versions of the platform may support:
 - Payment Reconciliation Status
 
 ---
+
+# Table: returns
+
+## Purpose
+
+Stores every return request initiated by customers for purchased products.
+
+Each record represents a single return event for an individual order item. A customer may return all or part of the purchased quantity, and multiple return requests can exist for the same order item over time.
+
+This table records the reason for the return, quantity returned, refund amount, return status, and important timestamps related to the return process.
+
+Returns are considered **business events** and should never replace or modify the original purchase transaction.
+
+---
+
+## Columns
+
+| Column | Data Type | Description |
+|---------|-----------|-------------|
+| return_id | INTEGER | System-generated unique identifier for each return request. Primary Key. |
+| order_item_id | INTEGER | References the purchased order item being returned. Foreign Key to `order_items.order_item_id`. |
+| returned_quantity | INTEGER | Quantity returned in this specific return request. Must be greater than zero. |
+| return_reason | VARCHAR(255) | Reason provided by the customer for returning the product. |
+| return_status | VARCHAR(20) | Current status of the return request (Requested, Approved, Rejected, Refunded). |
+| refund_amount | NUMERIC(10,2) | Actual refund amount processed for this return request. |
+| returned_at | TIMESTAMP | Date and time when the customer initiated the return request. |
+| processed_at | TIMESTAMP | Date and time when the return request was processed or refunded. |
+| created_at | TIMESTAMP | Timestamp when the return record was created. |
+
+---
+
+## Business Notes
+
+- Every return belongs to exactly one order item.
+- One order item may have multiple return requests.
+- Returns are recorded as separate business events instead of modifying the original purchase.
+- Partial returns are supported through the `returned_quantity` column.
+- Refund amounts are stored as snapshots because the actual refund may differ from the theoretical product value due to discounts, promotions, taxes, or business policies.
+- Historical purchase information remains unchanged regardless of return activity.
+
+---
+
+## Relationships
+
+### Parent Tables
+
+- `order_items`
+    - `returns.order_item_id` → `order_items.order_item_id`
+
+### Child Tables
+
+None
+
+Relationship:
+
+```text
+Orders (1)
+      │
+      ▼
+OrderItems (Many)
+      │
+      ▼
+Returns (Many)
+```
+
+---
+
+## Design Decisions
+
+### Why create a separate Returns table?
+
+A return is a new business event, not the opposite of a purchase.
+
+Deleting or modifying the original order item would result in loss of historical sales data.
+
+Instead, each return is stored independently, allowing the business to maintain a complete audit trail.
+
+---
+
+### Why store returned_quantity?
+
+Customers may return only part of the purchased quantity.
+
+Example:
+
+Purchased Quantity = 5
+
+↓
+
+Return Request #1 = 2
+
+↓
+
+Return Request #2 = 1
+
+Each return request is recorded separately.
+
+This preserves the complete history of return activity and simplifies inventory reconciliation.
+
+---
+
+### Why store refund_amount?
+
+Although the refund amount can sometimes be calculated from the product price and returned quantity, the actual refund processed may differ due to:
+
+- Promotional discounts
+- Partial refunds
+- Shipping adjustments
+- Business policies
+- Manual customer service decisions
+
+Therefore, the actual refund amount is stored as part of the transaction.
+
+---
+
+### Why use return_status?
+
+Every return follows its own lifecycle.
+
+Example:
+
+```
+Requested
+
+↓
+
+Approved
+
+↓
+
+Refunded
+```
+
+or
+
+```
+Requested
+
+↓
+
+Rejected
+```
+
+Tracking the return status allows customer support and operations teams to monitor return processing.
+
+---
+
+### Why ON DELETE RESTRICT?
+
+Returned products are part of historical business records.
+
+Deleting an order item that has associated returns would compromise financial reporting and auditing.
+
+Therefore, deletion is restricted.
+
+---
+
+## Business Rules
+
+1. Every return must belong to a valid order item.
+2. Returned quantity must be greater than zero.
+3. Refund amount cannot be negative.
+4. Multiple return requests may exist for the same order item.
+5. The total returned quantity for an order item must never exceed the purchased quantity. *(Validated in the application layer.)*
+6. The refund amount should never exceed the amount actually paid for the returned quantity. *(Validated in the application layer.)*
+7. Original purchase records must never be modified because of returns.
+8. Every return request must preserve its own history and lifecycle.
+
+---
+
+## Future Enhancements
+
+Future versions of the platform may support:
+
+- Return Pickup Scheduling
+- Return Warehouse
+- Return Shipment Tracking
+- Return Images
+- Product Condition (Opened, Damaged, Unused)
+- Inspection Status
+- Return Approval Workflow
+- Automatic Refund Processing
+- Exchange Requests
+- Return Window Validation (e.g., 30-day policy)
+- Restocking Fees
+- Return Fraud Detection
+
+---
