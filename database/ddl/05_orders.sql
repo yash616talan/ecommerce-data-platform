@@ -1,70 +1,98 @@
 CREATE TABLE IF NOT EXISTS ecommerce.orders
 (
-    order_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    --------------------------------------------------------------------
+    -- Keys
+    --------------------------------------------------------------------
+
+    order_id INTEGER GENERATED ALWAYS AS IDENTITY,
+
+    source_order_id INTEGER NOT NULL,
+
+    --------------------------------------------------------------------
+    -- Foreign Keys
+    --------------------------------------------------------------------
 
     customer_id INTEGER NOT NULL,
 
+    address_id INTEGER NOT NULL,
+
+    --------------------------------------------------------------------
+    -- Order Details
+    --------------------------------------------------------------------
+
     order_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    payment_status VARCHAR(20) NOT NULL
-        CHECK (
-            payment_status IN
-            ('Pending','Paid','Failed','Refunded')
-        ),
+    order_status VARCHAR(20) NOT NULL,
 
-    order_status VARCHAR(30) NOT NULL
+    total_amount NUMERIC(12,2) NOT NULL,
+
+    payment_status VARCHAR(20) NOT NULL,
+
+    --------------------------------------------------------------------
+    -- Recipient Snapshot
+    --------------------------------------------------------------------
+
+    recipient_name VARCHAR(200) NOT NULL,
+
+    recipient_phone VARCHAR(20) NOT NULL,
+
+    shipping_address TEXT NOT NULL,
+
+    --------------------------------------------------------------------
+    -- Audit Columns
+    --------------------------------------------------------------------
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    --------------------------------------------------------------------
+    -- Constraints
+    --------------------------------------------------------------------
+
+    CONSTRAINT pk_orders
+        PRIMARY KEY (order_id),
+
+    CONSTRAINT uq_orders_source_order_id
+        UNIQUE (source_order_id),
+
+    CONSTRAINT fk_orders_customer
+        FOREIGN KEY (customer_id)
+        REFERENCES ecommerce.customers(customer_id),
+
+    CONSTRAINT fk_orders_address
+        FOREIGN KEY (address_id)
+        REFERENCES ecommerce.addresses(address_id),
+
+    CONSTRAINT chk_orders_total_amount
+        CHECK (total_amount >= 0),
+
+    CONSTRAINT chk_orders_status
         CHECK (
-            order_status IN
-            (
-                'Pending Payment',
+            order_status IN (
+                'Pending',
                 'Confirmed',
                 'Packed',
                 'Shipped',
                 'Delivered',
-                'Cancelled',
-                'Returned'
+                'Cancelled'
             )
         ),
 
-    shipping_name VARCHAR(150) NOT NULL,
-
-    shipping_phone VARCHAR(20) NOT NULL,
-
-    shipping_address_line1 VARCHAR(255) NOT NULL,
-
-    shipping_address_line2 VARCHAR(255),
-
-    shipping_city VARCHAR(100) NOT NULL,
-
-    shipping_state VARCHAR(100) NOT NULL,
-
-    shipping_country VARCHAR(100) NOT NULL,
-
-    shipping_postal_code VARCHAR(20) NOT NULL,
-
-    shipping_cost NUMERIC(10,2) NOT NULL
-        DEFAULT 0
-        CHECK (shipping_cost >= 0),
-
-    tax_amount NUMERIC(10,2) NOT NULL
-        DEFAULT 0
-        CHECK (tax_amount >= 0),
-
-    discount_amount NUMERIC(10,2) NOT NULL
-        DEFAULT 0
-        CHECK (discount_amount >= 0),
-
-    total_amount NUMERIC(10,2) NOT NULL
-        CHECK (total_amount >= 0),
-
-    created_at TIMESTAMP NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
-
-    updated_at TIMESTAMP NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_customer
-        FOREIGN KEY(customer_id)
-        REFERENCES ecommerce.customers(customer_id)
-        ON DELETE RESTRICT
+    CONSTRAINT chk_orders_payment_status
+        CHECK (
+            payment_status IN (
+                'Pending',
+                'Paid',
+                'Failed',
+                'Refunded'
+            )
+        )
 );
+
+CREATE INDEX idx_orders_customer
+ON ecommerce.orders(customer_id);
+
+CREATE INDEX idx_orders_address
+ON ecommerce.orders(address_id);
+
+CREATE INDEX idx_orders_order_date
+ON ecommerce.orders(order_date);

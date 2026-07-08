@@ -1,29 +1,52 @@
 CREATE TABLE IF NOT EXISTS ecommerce.inventory
 (
-    inventory_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    --------------------------------------------------------------------
+    -- Keys
+    --------------------------------------------------------------------
 
-    product_id INTEGER NOT NULL UNIQUE,
+    inventory_id INTEGER GENERATED ALWAYS AS IDENTITY,
 
-    available_quantity INTEGER NOT NULL
-        DEFAULT 0
-        CHECK (available_quantity >= 0),
+    --------------------------------------------------------------------
+    -- Foreign Keys
+    --------------------------------------------------------------------
 
-    reserved_quantity INTEGER NOT NULL
-        DEFAULT 0
-        CHECK (reserved_quantity >= 0),
+    product_id INTEGER NOT NULL,
 
-    reorder_level INTEGER NOT NULL
-        DEFAULT 10
-        CHECK (reorder_level >= 0),
+    --------------------------------------------------------------------
+    -- Inventory Details
+    --------------------------------------------------------------------
 
-    last_stock_update TIMESTAMP NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
+    quantity_available INTEGER NOT NULL DEFAULT 0,
 
-    created_at TIMESTAMP NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
+    quantity_reserved INTEGER NOT NULL DEFAULT 0,
 
-    CONSTRAINT fk_product
-        FOREIGN KEY(product_id)
-        REFERENCES ecommerce.products(product_id)
-        ON DELETE RESTRICT
+    reorder_level INTEGER NOT NULL DEFAULT 10,
+
+    last_stock_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    --------------------------------------------------------------------
+    -- Constraints
+    --------------------------------------------------------------------
+
+    CONSTRAINT pk_inventory
+        PRIMARY KEY (inventory_id),
+
+    CONSTRAINT uq_inventory_product
+        UNIQUE (product_id),
+
+    CONSTRAINT fk_inventory_product
+        FOREIGN KEY (product_id)
+        REFERENCES ecommerce.products(product_id),
+
+    CONSTRAINT chk_inventory_available
+        CHECK (quantity_available >= 0),
+
+    CONSTRAINT chk_inventory_reserved
+        CHECK (quantity_reserved >= 0),
+
+    CONSTRAINT chk_inventory_reorder_level
+        CHECK (reorder_level >= 0)
 );
+
+CREATE INDEX idx_inventory_product
+ON ecommerce.inventory(product_id);

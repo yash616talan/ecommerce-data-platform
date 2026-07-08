@@ -1,36 +1,66 @@
 CREATE TABLE IF NOT EXISTS ecommerce.inventory_transactions
 (
-    transaction_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    --------------------------------------------------------------------
+    -- Keys
+    --------------------------------------------------------------------
+
+    inventory_transaction_id INTEGER GENERATED ALWAYS AS IDENTITY,
+
+    source_inventory_transaction_id INTEGER NOT NULL,
+
+    --------------------------------------------------------------------
+    -- Foreign Keys
+    --------------------------------------------------------------------
 
     product_id INTEGER NOT NULL,
 
-    transaction_type VARCHAR(20) NOT NULL
-        CHECK (
-            transaction_type IN
-            (
-                'Purchase',
-                'Sale',
-                'Return',
-                'Damage',
-                'Adjustment'
-            )
-        ),
+    --------------------------------------------------------------------
+    -- Transaction Details
+    --------------------------------------------------------------------
 
-    quantity INTEGER NOT NULL
-        CHECK (quantity > 0),
+    transaction_type VARCHAR(20) NOT NULL,
+
+    quantity INTEGER NOT NULL,
+
+    transaction_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     reference_id INTEGER,
 
-    remarks TEXT,
+    remarks VARCHAR(500),
 
-    transaction_date TIMESTAMP NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
+    --------------------------------------------------------------------
+    -- Constraints
+    --------------------------------------------------------------------
 
-    created_at TIMESTAMP NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_inventory_transactions
+        PRIMARY KEY (inventory_transaction_id),
 
-    CONSTRAINT fk_product
-        FOREIGN KEY(product_id)
-        REFERENCES ecommerce.products(product_id)
-        ON DELETE RESTRICT
+    CONSTRAINT uq_inventory_transactions_source_id
+        UNIQUE (source_inventory_transaction_id),
+
+    CONSTRAINT fk_inventory_transactions_product
+        FOREIGN KEY (product_id)
+        REFERENCES ecommerce.products(product_id),
+
+    CONSTRAINT chk_inventory_transactions_quantity
+        CHECK (quantity > 0),
+
+    CONSTRAINT chk_inventory_transactions_type
+        CHECK (
+            transaction_type IN (
+                'Purchase',
+                'Sale',
+                'Return',
+                'Adjustment'
+            )
+        )
 );
+
+CREATE INDEX idx_inventory_transactions_product
+ON ecommerce.inventory_transactions(product_id);
+
+CREATE INDEX idx_inventory_transactions_date
+ON ecommerce.inventory_transactions(transaction_date);
+
+CREATE INDEX idx_inventory_transactions_type
+ON ecommerce.inventory_transactions(transaction_type);

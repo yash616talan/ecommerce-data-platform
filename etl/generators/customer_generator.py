@@ -29,7 +29,7 @@ class CustomerGenerator:
         output_path: str = RAW_DATA_PATH,
     ):
         """
-        Initialize the customer generator.
+        Initialize the generator.
         """
 
         self.num_customers = num_customers
@@ -56,16 +56,6 @@ class CustomerGenerator:
     def generate_customer(self, customer_number: int) -> dict:
         """
         Generate a single customer record.
-
-        Parameters
-        ----------
-        customer_number : int
-            Used only to generate a unique email address.
-
-        Returns
-        -------
-        dict
-            Customer record.
         """
 
         first_name = self.fake.first_name()
@@ -80,6 +70,7 @@ class CustomerGenerator:
         )
 
         return {
+            "source_customer_id": customer_number,
             "first_name": first_name,
             "last_name": last_name,
             "email": email,
